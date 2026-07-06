@@ -24,6 +24,7 @@ import {
   Inbox,
   Layers3,
   LockKeyhole,
+  Menu,
   MessageSquareText,
   MousePointer2,
   PenLine,
@@ -514,6 +515,7 @@ export default function Home() {
   const [isChatSending, setIsChatSending] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const voicePanelRef = useRef<VoiceCommandPanelHandle | null>(null);
   const route = useMemo(() => routeInput(input), [input]);
 
@@ -576,14 +578,25 @@ export default function Home() {
       <div className="mx-auto min-h-[calc(100vh-24px)] w-full max-w-full overflow-hidden rounded-xl border border-zion-line bg-white/88 shadow-command sm:min-h-[calc(100vh-40px)] 2xl:max-w-[1560px]">
         <header className="min-w-0 border-b border-zion-line bg-white/92 px-4 py-4 backdrop-blur lg:px-6">
           <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-lg border border-zion-line bg-zion-panel text-lg font-bold text-zion-cyan">Z</div>
-              <div className="min-w-0">
-                <h1 className="text-xl font-semibold tracking-normal">Zion</h1>
-                <p className="text-sm text-zion-muted">Private AI command center for routing, privacy, knowledge, and daily focus.</p>
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="grid h-11 w-11 place-items-center rounded-lg border border-zion-line bg-zion-panel text-lg font-bold text-zion-cyan">Z</div>
+                <div className="min-w-0">
+                  <h1 className="text-xl font-semibold tracking-normal">Zion</h1>
+                  <p className="hidden text-sm text-zion-muted sm:block">Private AI command center for routing, privacy, knowledge, and daily focus.</p>
+                </div>
               </div>
+              <button
+                type="button"
+                aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isMobileMenuOpen}
+                onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-lg border border-zion-line bg-zion-panel2 text-zion-text xl:hidden"
+              >
+                {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
             </div>
-            <nav className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+            <nav className="hidden w-auto min-w-0 flex-wrap gap-2 xl:flex">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.name;
@@ -602,6 +615,32 @@ export default function Home() {
               })}
             </nav>
           </div>
+          {isMobileMenuOpen && (
+            <nav className="mt-4 grid gap-2 rounded-xl border border-zion-line bg-zion-panel2 p-2 xl:hidden">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const active = activeTab === tab.name;
+                return (
+                  <button
+                    key={tab.name}
+                    onClick={() => {
+                      setActiveTab(tab.name);
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`inline-flex h-11 min-w-0 items-center justify-between rounded-lg border px-3 text-sm font-semibold transition ${
+                      active ? "border-zion-cyan/60 bg-white text-zion-cyan" : "border-transparent bg-transparent text-zion-muted hover:bg-white hover:text-zion-text"
+                    }`}
+                  >
+                    <span className="inline-flex min-w-0 items-center gap-2">
+                      <Icon size={16} />
+                      {tab.name}
+                    </span>
+                    {active && <ChevronRight size={16} />}
+                  </button>
+                );
+              })}
+            </nav>
+          )}
           <div className="mt-4 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {scopes.map((scope) => (
