@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type RefObject } from "react";
 import {
   AlertTriangle,
   Archive,
@@ -25,7 +25,6 @@ import {
   Layers3,
   LockKeyhole,
   MessageSquareText,
-  Mic2,
   MousePointer2,
   PenLine,
   Plus,
@@ -42,7 +41,7 @@ import {
   Zap
 } from "lucide-react";
 import { VoiceButton } from "@/src/components/voice/VoiceButton";
-import { VoiceModal } from "@/src/components/voice/VoiceModal";
+import { VoiceCommandPanel, type VoiceCommandPanelHandle } from "@/src/components/voice/VoiceCommandPanel";
 import type { ZionRoutingPayload } from "@/src/lib/oracle/routingTypes";
 
 type Tab = "Command" | "Dashboard" | "Knowledge" | "Operator" | "Vault" | "Settings";
@@ -505,8 +504,8 @@ export default function Home() {
   const [activeScope, setActiveScope] = useState<Scope>("All");
   const [input, setInput] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
-  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
   const [latestVoicePayload, setLatestVoicePayload] = useState<ZionRoutingPayload | null>(null);
+  const voicePanelRef = useRef<VoiceCommandPanelHandle | null>(null);
   const route = useMemo(() => routeInput(input), [input]);
 
   return (
@@ -570,7 +569,9 @@ export default function Home() {
             uploadedFiles={uploadedFiles}
             setUploadedFiles={setUploadedFiles}
             latestVoicePayload={latestVoicePayload}
-            onOpenVoice={() => setVoiceModalOpen(true)}
+            onStartVoice={() => voicePanelRef.current?.startListening()}
+            onVoicePayload={setLatestVoicePayload}
+            voicePanelRef={voicePanelRef}
           />
         )}
         {activeTab === "Dashboard" && <DashboardView />}
@@ -578,7 +579,6 @@ export default function Home() {
         {activeTab === "Operator" && <OperatorView />}
         {activeTab === "Vault" && <VaultView />}
         {activeTab === "Settings" && <SettingsView />}
-        <VoiceModal open={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} onPayload={setLatestVoicePayload} />
       </div>
     </main>
   );
@@ -591,7 +591,9 @@ function CommandView({
   uploadedFiles,
   setUploadedFiles,
   latestVoicePayload,
-  onOpenVoice
+  onStartVoice,
+  onVoicePayload,
+  voicePanelRef
 }: {
   input: string;
   setInput: (value: string) => void;
@@ -599,7 +601,9 @@ function CommandView({
   uploadedFiles: UploadedFile[];
   setUploadedFiles: (files: UploadedFile[]) => void;
   latestVoicePayload: ZionRoutingPayload | null;
-  onOpenVoice: () => void;
+  onStartVoice: () => void;
+  onVoicePayload: (payload: ZionRoutingPayload) => void;
+  voicePanelRef: RefObject<VoiceCommandPanelHandle | null>;
 }) {
   const handleFiles = (files: FileList | null) => {
     if (!files) {
@@ -680,7 +684,7 @@ function CommandView({
                     }}
                   />
                 </label>
-                <VoiceButton onClick={onOpenVoice} />
+                <VoiceButton onClick={onStartVoice} />
                 <button className="hidden h-12 w-12 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm sm:grid">
                   <Send size={16} />
                 </button>
@@ -717,29 +721,7 @@ function CommandView({
           </div>
         </section>
 
-        <aside className="min-w-0 rounded-xl border border-zion-line bg-zion-panel p-4 shadow-sm">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-zion-cyan">Speak to Zion</p>
-              <h2 className="mt-1 text-xl font-semibold">Transcript & details</h2>
-              <p className="mt-2 text-sm leading-6 text-zion-muted">Use voice for the first proof-of-life route. Oracle listens, classifies locally, and Zion speaks back.</p>
-            </div>
-            <button onClick={onOpenVoice} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-zion-cyan px-3 text-sm font-semibold text-white">
-              <Mic2 size={16} />
-              Speak
-            </button>
-          </div>
-          <div className="mt-5 grid gap-3">
-            <InfoBlock label="Transcript" value={latestVoicePayload ? `You said: ${latestVoicePayload.rawInput}` : "No voice command captured yet."} />
-            <InfoBlock label="Response" value={latestVoicePayload?.responseText ?? "Click Speak and say \"Hello Zion\" to test the browser voice flow."} />
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              <RouteTile label="Scope" value={latestVoicePayload?.scope ?? "mixed"} />
-              <RouteTile label="Container" value={latestVoicePayload?.container ?? "General"} />
-              <RouteTile label="Agent" value={latestVoicePayload?.agent ?? "Oracle"} />
-              <RouteTile label="Confidence" value={latestVoicePayload ? `${Math.round(latestVoicePayload.confidence * 100)}%` : "Ready"} />
-            </div>
-          </div>
-        </aside>
+        <VoiceCommandPanel ref={voicePanelRef} payload={latestVoicePayload} onPayload={onVoicePayload} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

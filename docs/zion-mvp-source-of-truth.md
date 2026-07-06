@@ -27,7 +27,7 @@ Capture -> Route -> Protect -> Execute -> Store -> Dashboard -> Learn -> Improve
 - Finance connector: later, not Phase 1.
 - AI model strategy: default routine chat to the cheapest fast OpenAI API chat model; escalate only when task complexity, risk, context length, coding, multimodal needs, or explicit user instruction requires it.
 - Codex role: Codex is the Operator/build agent for GitHub, code, and app self-improvement workflows, not the default conversational brain.
-- Voice MVP path: start with a browser-native voice modal proof of life before OpenAI Realtime, WebRTC, streaming audio, or backend voice APIs.
+- Voice MVP path: start with a browser-native inline command-panel proof of life before OpenAI Realtime, WebRTC, streaming audio, or backend voice APIs.
 
 ## Core Layers
 
@@ -189,7 +189,7 @@ Development request records track:
 - GitHub issue body
 - Codex prompt
 
-## Browser Voice Modal
+## Browser Voice Command Panel
 
 First milestone goal:
 
@@ -203,7 +203,7 @@ MVP choices:
 - Text-to-speech: browser `speechSynthesis`.
 - AI response: local mock response.
 - Routing payload: lightweight local `ZionRoutingPayload`.
-- Voice UI: modal overlay opened from the Command screen.
+- Voice UI: inline `Speak to Zion` panel inside the Command screen.
 - Backend: none for this milestone.
 
 Do not add OpenAI Realtime, WebRTC, streaming audio, Codex integration, Claude, Gemini, or backend APIs in this milestone.
@@ -211,18 +211,23 @@ Do not add OpenAI Realtime, WebRTC, streaming audio, Codex integration, Claude, 
 Voice user flow:
 
 1. User clicks Speak from Command.
-2. Voice modal opens.
-3. User clicks Start listening.
+2. The inline `Speak to Zion` panel starts listening in place.
+3. User can also click Start listening in the right-side panel.
 4. User says "Hello Zion".
 5. Browser transcribes speech.
 6. Mock Oracle router classifies scope, container, privacy, agent, skill, confidence, and response text.
-7. Modal displays transcript and routing payload.
+7. The right-side panel displays transcript and routing payload.
 8. Browser speaks the response aloud.
-9. The right-side Routing Payload panel may display the latest voice route.
+9. The bottom Routing Payload tile displays the latest voice route.
+
+Interaction rule:
+
+- Voice interactions must stay in the main Command area.
+- Do not force the user to scroll to find Start listening, transcript, routing details, or response text.
 
 Voice implementation files:
 
-- `src/components/voice/VoiceModal.tsx`
+- `src/components/voice/VoiceCommandPanel.tsx`
 - `src/components/voice/VoiceButton.tsx`
 - `src/hooks/useSpeechRecognition.ts`
 - `src/hooks/useSpeechSynthesis.ts`
@@ -331,7 +336,7 @@ Agents do not override privacy.
 1. Command
    - Orb-first landing
    - Main command input
-   - Speak button opens browser-native voice modal
+   - Speak button starts the browser-native inline voice panel
    - Send button
    - Footer intelligence strip
    - Context bar: Scope / Container / Agent / Skill / Privacy
