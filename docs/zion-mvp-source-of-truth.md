@@ -35,6 +35,40 @@ Capture -> Route -> Protect -> Execute -> Store -> Dashboard -> Learn -> Improve
 5. Skill Layer
 6. Knowledge Steward Layer
 7. Evolution Engine
+8. Global Preference Intelligence
+
+## Global Preference Intelligence
+
+Internal module name: `preference_intelligence`.
+
+Global Preference Intelligence is a shared layer for Oracle and all relevant agents. It learns reusable preferences, recurring patterns, active project dependencies, repeated corrections, and high-value context signals while preserving strict container boundaries.
+
+It includes three connected capabilities:
+
+- Preference Memory: approved preferences, constraints, output styles, corrections, and reusable context saved to the right container.
+- Passive Watch Intelligence: automatically inferred watch candidates for dependencies, vendors, deadlines, lifecycle risks, security advisories, pricing changes, campaign milestones, and recurring workflows.
+- Usage Trend Learning: repeated usage patterns that can recommend new agents, skills, buckets, rules, automations, templates, QA checklists, or dashboard widgets.
+
+Default behavior:
+
+- Internal passive watch candidates may be created silently when a signal is useful.
+- Proactive alerts are permission-gated and low-noise.
+- Person-specific, health, financial, client-sensitive, relationship, or other private details require explicit approval before memory or proactive use.
+- Global preferences are only used when they clearly apply across contexts.
+- Redstone, Synergy, personal, family, and app-project context must not mix unless explicitly connected.
+- Dismissed candidates and dismissed trend recommendations should not repeatedly resurface.
+
+Backend foundation:
+
+- `preference_memories`
+- `watch_items`
+- `usage_trends`
+- `proactive_alerts`
+
+Service foundation:
+
+- `src/services/preferenceIntelligenceService.ts`
+- SQL migration: `db/migrations/001_preference_intelligence.sql`
 
 ## Scopes
 
@@ -148,6 +182,7 @@ Agents do not override privacy.
    - Creative Queue
    - Technical / Research Queue
    - Skill Gaps / Evolution Suggestions
+   - Intelligence tabs: Preferences, Watchlist, Usage Trends
    - Vault status
 
 3. Knowledge

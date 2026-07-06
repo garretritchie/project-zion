@@ -40,6 +40,7 @@ import {
 
 type Tab = "Command" | "Dashboard" | "Knowledge" | "Vault" | "Settings";
 type Scope = "All" | "Work" | "Personal" | "Mixed";
+type IntelligenceTab = "Preferences" | "Watchlist" | "Usage Trends";
 type UploadedFile = {
   id: string;
   name: string;
@@ -116,6 +117,138 @@ const dashboardCards = [
   { title: "Cypher Watch", detail: "Scope creep risk: integrations before routing proof", icon: AlertTriangle, status: "Watch" },
   { title: "Knowledge Inbox", detail: "5 items need tags or storage destination", icon: Inbox, status: "5" },
   { title: "Skill Gaps", detail: "Calendar bridge and file extraction need connectors", icon: GitBranch, status: "2 gaps" }
+];
+
+const preferenceMemories = [
+  {
+    summary: "Use self-contained Codex-ready implementation updates for AI Assistant v2 build-plan changes.",
+    container: "project.ai_assistant_v2",
+    scope: "project",
+    domain: "product_development",
+    category: "implementation_format",
+    type: "explicit_preference",
+    strength: "high",
+    confidence: "95%",
+    proactive: true,
+    lastUsed: "Today",
+    useCount: 8,
+    created: "2026-07-06"
+  },
+  {
+    summary: "Keep Redstone, Synergy, personal, family, and app-project context separated unless explicitly connected.",
+    container: "global",
+    scope: "global",
+    domain: "privacy",
+    category: "context_boundary",
+    type: "constraint",
+    strength: "critical",
+    confidence: "98%",
+    proactive: true,
+    lastUsed: "Today",
+    useCount: 14,
+    created: "2026-07-06"
+  },
+  {
+    summary: "Format Redstone infrastructure work as technician-facing sprints with commands, validation, rollback, risks, and completion criteria.",
+    container: "business.redstone",
+    scope: "business",
+    domain: "technical_operations",
+    category: "team_execution",
+    type: "usage_pattern",
+    strength: "high",
+    confidence: "90%",
+    proactive: true,
+    lastUsed: "Yesterday",
+    useCount: 5,
+    created: "2026-07-06"
+  }
+];
+
+const watchItems = [
+  {
+    item: "AI Assistant v2 database layer",
+    container: "project.ai_assistant_v2",
+    domain: "product_development",
+    category: "platform_dependency",
+    importance: "high",
+    state: "active_passive",
+    status: "active",
+    watchFor: ["breaking changes", "security advisories", "pricing changes", "new relevant features"],
+    priority: "high",
+    score: "0.86",
+    why: "Core project dependency with future compatibility risk.",
+    signals: "active project, implementation dependency",
+    proactive: true,
+    lastChecked: "Not connected",
+    lastNotified: "Never"
+  },
+  {
+    item: "Codex-ready implementation pattern",
+    container: "project.ai_assistant_v2",
+    domain: "product_development",
+    category: "output_format",
+    importance: "high",
+    state: "active_explicit",
+    status: "active",
+    watchFor: ["repeated usage", "new rule opportunity", "template improvement"],
+    priority: "digest_only",
+    score: "0.91",
+    why: "User repeatedly ports planning output into Codex.",
+    signals: "explicit preference, repeated usage",
+    proactive: true,
+    lastChecked: "Today",
+    lastNotified: "Never"
+  },
+  {
+    item: "Synergy campaign pack workflow",
+    container: "business.synergy",
+    domain: "marketing",
+    category: "campaign_production",
+    importance: "medium",
+    state: "candidate",
+    status: "active",
+    watchFor: ["course promotion", "campaign timing", "new skill opportunity"],
+    priority: "medium",
+    score: "0.58",
+    why: "Potential reusable marketing workflow.",
+    signals: "workflow repetition candidate",
+    proactive: false,
+    lastChecked: "Not connected",
+    lastNotified: "Never"
+  }
+];
+
+const usageTrends = [
+  {
+    trend: "Codex-ready implementation sections",
+    container: "project.ai_assistant_v2",
+    domain: "product_development",
+    frequency: 7,
+    confidence: "92%",
+    recommendation: "Make Codex-ready sections the default format for this project.",
+    status: "suggested",
+    lastDetected: "Today"
+  },
+  {
+    trend: "Technician-facing Redstone sprint plans",
+    container: "business.redstone",
+    domain: "technical_operations",
+    frequency: 5,
+    confidence: "88%",
+    recommendation: "Create a Redstone technician sprint template.",
+    status: "detected",
+    lastDetected: "Yesterday"
+  },
+  {
+    trend: "Strict context boundaries",
+    container: "global",
+    domain: "privacy",
+    frequency: 9,
+    confidence: "96%",
+    recommendation: "Create a default rule blocking cross-container memory retrieval.",
+    status: "accepted",
+    lastDetected: "Today"
+  }
 ];
 
 const knowledgeItems = [
@@ -482,12 +615,14 @@ function formatFileSize(size: number) {
 }
 
 function DashboardView() {
+  const [intelligenceTab, setIntelligenceTab] = useState<IntelligenceTab>("Preferences");
+
   return (
     <section className="p-3 sm:p-4 lg:p-6">
       <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">AI-curated dashboard</h2>
-          <p className="mt-1 text-sm text-zion-muted">Shows what matters now, not a database dump. Vault data remains abstracted.</p>
+          <p className="mt-1 text-sm text-zion-muted">Shows what matters now, including preference memory, passive watches, and usage trend learning.</p>
         </div>
         <button className="inline-flex h-10 items-center gap-2 rounded-lg border border-zion-line bg-zion-panel px-3 text-sm font-semibold text-zion-text">
           <MessageSquareText size={16} />
@@ -511,8 +646,166 @@ function DashboardView() {
           );
         })}
       </div>
+      <section className="mt-5 rounded-xl border border-zion-line bg-zion-panel p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-zion-cyan">Dashboard / Intelligence</p>
+            <h3 className="mt-1 text-xl font-semibold">Global Preference Intelligence</h3>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-zion-muted">
+              Shared intelligence for Oracle and agents. Memories, passive watches, and trend recommendations stay container-bound and permission-gated.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
+            {(["Preferences", "Watchlist", "Usage Trends"] as IntelligenceTab[]).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setIntelligenceTab(tab)}
+                className={`h-10 rounded-lg border px-3 text-sm font-semibold ${
+                  intelligenceTab === tab ? "border-zion-cyan/60 bg-zion-cyan/12 text-zion-cyan" : "border-zion-line bg-white text-zion-muted"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="mt-4">
+          {intelligenceTab === "Preferences" && <PreferencesIntelligence />}
+          {intelligenceTab === "Watchlist" && <WatchlistIntelligence />}
+          {intelligenceTab === "Usage Trends" && <UsageTrendsIntelligence />}
+        </div>
+      </section>
     </section>
   );
+}
+
+function PreferencesIntelligence() {
+  return (
+    <div className="grid gap-3">
+      {preferenceMemories.map((memory) => (
+        <article key={`${memory.container}-${memory.summary}`} className="rounded-lg border border-zion-line bg-white p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <h4 className="text-sm font-semibold">{memory.summary}</h4>
+              <p className="mt-2 text-xs leading-5 text-zion-muted">
+                {memory.container} / {memory.scope} / {memory.domain} / {memory.category}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <StatusPill>{memory.type}</StatusPill>
+              <StatusPill>{memory.strength}</StatusPill>
+              <StatusPill>{memory.confidence}</StatusPill>
+              <StatusPill>{memory.proactive ? "proactive on" : "proactive off"}</StatusPill>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-2 text-xs text-zion-muted sm:grid-cols-3">
+            <span>Last used: {memory.lastUsed}</span>
+            <span>Use count: {memory.useCount}</span>
+            <span>Created: {memory.created}</span>
+          </div>
+          <ActionRow actions={["Edit", "Archive", memory.proactive ? "Disable proactive" : "Enable proactive", "Move container"]} />
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function WatchlistIntelligence() {
+  const groups = [
+    { title: "Active Watches", items: watchItems.filter((item) => item.state === "active_explicit") },
+    { title: "Passive Watches", items: watchItems.filter((item) => item.state === "active_passive") },
+    { title: "Candidates", items: watchItems.filter((item) => item.state === "candidate") }
+  ];
+
+  return (
+    <div className="grid gap-4">
+      {groups.map((group) => (
+        <div key={group.title}>
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-sm font-semibold">{group.title}</h4>
+            <span className="text-xs font-semibold text-zion-cyan">{group.items.length}</span>
+          </div>
+          <div className="grid gap-3">
+            {group.items.map((item) => (
+              <article key={item.item} className="rounded-lg border border-zion-line bg-white p-4">
+                <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                  <div>
+                    <h5 className="text-sm font-semibold">{item.item}</h5>
+                    <p className="mt-2 text-xs leading-5 text-zion-muted">
+                      {item.container} / {item.domain} / {item.category}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <StatusPill>{item.importance}</StatusPill>
+                    <StatusPill>{item.state}</StatusPill>
+                    <StatusPill>{item.priority}</StatusPill>
+                    <StatusPill>score {item.score}</StatusPill>
+                  </div>
+                </div>
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  <InfoBlock label="Watching for" value={item.watchFor.join(", ")} />
+                  <InfoBlock label="Why this is watched" value={item.why} />
+                  <InfoBlock label="Signals" value={item.signals} />
+                  <InfoBlock label="Notification state" value={`${item.proactive ? "Proactive enabled" : "Proactive disabled"} / checked ${item.lastChecked} / notified ${item.lastNotified}`} />
+                </div>
+                <ActionRow actions={["Confirm", "Dismiss", "Promote to Active", "Pause", "Edit triggers", "Disable proactive alerts", "Archive", "Check now"]} />
+              </article>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function UsageTrendsIntelligence() {
+  return (
+    <div className="grid gap-3">
+      {usageTrends.map((trend) => (
+        <article key={trend.trend} className="rounded-lg border border-zion-line bg-white p-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+            <div>
+              <h4 className="text-sm font-semibold">{trend.trend}</h4>
+              <p className="mt-2 text-xs leading-5 text-zion-muted">
+                {trend.container} / {trend.domain} / frequency {trend.frequency} / last detected {trend.lastDetected}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <StatusPill>{trend.confidence}</StatusPill>
+              <StatusPill>{trend.status}</StatusPill>
+            </div>
+          </div>
+          <InfoBlock label="Recommendation" value={trend.recommendation} />
+          <ActionRow actions={["Accept recommendation", "Dismiss", "Archive", "Create rule", "Create skill", "Create automation", "Create bucket"]} />
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function InfoBlock({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-zion-line bg-zion-panel2 p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zion-muted">{label}</p>
+      <p className="mt-1 text-sm leading-6 text-zion-text">{value}</p>
+    </div>
+  );
+}
+
+function ActionRow({ actions }: { actions: string[] }) {
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {actions.map((action) => (
+        <button key={action} className="rounded-md border border-zion-line bg-zion-panel2 px-2 py-1 text-xs font-semibold text-zion-muted hover:border-zion-cyan/60 hover:text-zion-text">
+          {action}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function StatusPill({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-md border border-zion-line bg-zion-panel2 px-2 py-1 text-xs font-semibold text-zion-muted">{children}</span>;
 }
 
 function KnowledgeView() {
