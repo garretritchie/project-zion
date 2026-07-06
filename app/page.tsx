@@ -52,6 +52,7 @@ type UploadedFile = {
   name: string;
   size: number;
   type: string;
+  dataUrl: string;
 };
 type ChatMessage = {
   role: "user" | "assistant";
@@ -512,14 +513,20 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isChatSending, setIsChatSending] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const voicePanelRef = useRef<VoiceCommandPanelHandle | null>(null);
   const route = useMemo(() => routeInput(input), [input]);
 
   const sendChatMessage = async () => {
     const message = input.trim();
-    if (!message || isChatSending) return;
+    if ((!message && uploadedFiles.length === 0) || isChatSending) return;
 
-    const userMessage: ChatMessage = { role: "user", content: message };
+    const filesForRequest = uploadedFiles;
+    const fileLabel = filesForRequest.length ? `\n\nAttached: ${filesForRequest.map((file) => file.name).join(", ")}` : "";
+    const userMessage: ChatMessage = {
+      role: "user",
+      content: `${message || "Review the attached file(s)."}${fileLabel}`
+    };
     const nextMessages = [...chatMessages, userMessage];
     setChatMessages(nextMessages);
     setInput("");
@@ -533,6 +540,12 @@ export default function Home() {
         body: JSON.stringify({
           message,
           history: chatMessages.slice(-8),
+          files: filesForRequest.map((file) => ({
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            dataUrl: file.dataUrl
+          })),
           route: {
             scope: route.scope,
             container: route.container,
@@ -549,6 +562,7 @@ export default function Home() {
       }
 
       setChatMessages([...nextMessages, { role: "assistant", content: data.response ?? "" }]);
+      setUploadedFiles([]);
     } catch (error) {
       setChatError(error instanceof Error ? error.message : "Zion could not complete the request.");
       setChatMessages(chatMessages);
@@ -617,6 +631,8 @@ export default function Home() {
             route={route}
             uploadedFiles={uploadedFiles}
             setUploadedFiles={setUploadedFiles}
+            uploadError={uploadError}
+            setUploadError={setUploadError}
             latestVoicePayload={latestVoicePayload}
             onStartVoice={() => voicePanelRef.current?.startListening()}
             onVoicePayload={setLatestVoicePayload}
@@ -643,6 +659,8 @@ function CommandView({
   route,
   uploadedFiles,
   setUploadedFiles,
+  uploadError,
+  setUploadError,
   latestVoicePayload,
   onStartVoice,
   onVoicePayload,
@@ -657,6 +675,8 @@ function CommandView({
   route: ReturnType<typeof routeInput>;
   uploadedFiles: UploadedFile[];
   setUploadedFiles: (files: UploadedFile[]) => void;
+  uploadError: string | null;
+  setUploadError: (error: string | null) => void;
   latestVoicePayload: ZionRoutingPayload | null;
   onStartVoice: () => void;
   onVoicePayload: (payload: ZionRoutingPayload) => void;
@@ -666,20 +686,29 @@ function CommandView({
   chatError: string | null;
   latestChatResponse?: string;
 }) {
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files) {
       return;
     }
 
-    const nextFiles = Array.from(files).map((file) => ({
-      id: `${file.name}-${file.size}-${file.lastModified}`,
-      name: file.name,
-      size: file.size,
-      type: file.type || "unknown"
-    }));
+    setUploadError(null);
 
-    const existingIds = new Set(uploadedFiles.map((file) => file.id));
-    setUploadedFiles([...uploadedFiles, ...nextFiles.filter((file) => !existingIds.has(file.id))]);
+    try {
+      const nextFiles = await Promise.all(
+        Array.from(files).map(async (file) => ({
+          id: `${file.name}-${file.size}-${file.lastModified}`,
+          name: file.name,
+          size: file.size,
+          type: file.type || inferMimeType(file.name),
+          dataUrl: await readFileAsDataUrl(file)
+        }))
+      );
+
+      const existingIds = new Set(uploadedFiles.map((file) => file.id));
+      setUploadedFiles([...uploadedFiles, ...nextFiles.filter((file) => !existingIds.has(file.id))]);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Zion could not read that file.");
+    }
   };
 
   const removeFile = (fileId: string) => {
@@ -744,7 +773,7 @@ function CommandView({
                     className="sr-only"
                     type="file"
                     multiple
-                    accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp,application/pdf,text/*,image/*"
+                    accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.ppt,.pptx,.rtf,.odt,application/pdf,text/*"
                     onChange={(event) => {
                       handleFiles(event.target.files);
                       event.target.value = "";
@@ -781,6 +810,7 @@ function CommandView({
                   ))}
                 </div>
               )}
+              {uploadError && <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700">{uploadError}</p>}
             </div>
 
             <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
@@ -800,6 +830,7 @@ function CommandView({
           chatResponse={latestChatResponse}
           chatError={chatError}
           isChatSending={isChatSending}
+          agentName={latestVoicePayload?.agent ?? route.compactAgent}
         />
       </div>
 
@@ -856,6 +887,42 @@ function formatFileSize(size: number) {
   }
 
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Zion could not read that file."));
+    };
+    reader.onerror = () => reject(new Error("Zion could not read that file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function inferMimeType(filename: string) {
+  const extension = filename.split(".").pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    csv: "text/csv",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    md: "text/markdown",
+    odt: "application/vnd.oasis.opendocument.text",
+    pdf: "application/pdf",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    rtf: "application/rtf",
+    txt: "text/plain",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  };
+
+  return extension ? mimeTypes[extension] ?? "application/octet-stream" : "application/octet-stream";
 }
 
 function DashboardView() {

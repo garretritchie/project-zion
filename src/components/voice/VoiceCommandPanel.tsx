@@ -1,7 +1,7 @@
 "use client";
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { Command, Mic2, RefreshCcw, Square } from "lucide-react";
+import { Command, Mic2, RefreshCcw, Square, Volume2, VolumeX } from "lucide-react";
 import { useSpeechRecognition } from "@/src/hooks/useSpeechRecognition";
 import { useSpeechSynthesis } from "@/src/hooks/useSpeechSynthesis";
 import { mockOracleRouter } from "@/src/lib/oracle/mockOracleRouter";
@@ -21,12 +21,15 @@ export const VoiceCommandPanel = forwardRef<
     chatResponse?: string;
     chatError?: string | null;
     isChatSending?: boolean;
+    agentName?: string;
   }
->(function VoiceCommandPanel({ payload, onPayload, chatResponse, chatError, isChatSending }, ref) {
+>(function VoiceCommandPanel({ payload, onPayload, chatResponse, chatError, isChatSending, agentName = "Zion" }, ref) {
   const recognition = useSpeechRecognition();
   const synthesis = useSpeechSynthesis();
   const processedTranscriptRef = useRef("");
+  const lastSpokenChatRef = useRef("");
   const [voiceState, setVoiceState] = useState<VoiceState>("idle");
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
 
   const startListening = () => {
     if (!recognition.isSupported) {
@@ -64,14 +67,25 @@ export const VoiceCommandPanel = forwardRef<
     onPayload(nextPayload);
 
     window.setTimeout(() => {
-      if (synthesis.isSupported) {
+      if (synthesis.isSupported && voiceEnabled) {
         setVoiceState("speaking");
-        synthesis.speak(nextPayload.responseText);
+        synthesis.speak(nextPayload.responseText, getAgentVoiceProfile(nextPayload.agent));
       } else {
         setVoiceState("complete");
       }
     }, 250);
-  }, [onPayload, recognition.transcript, synthesis]);
+  }, [onPayload, recognition.transcript, synthesis, voiceEnabled]);
+
+  useEffect(() => {
+    if (!voiceEnabled || !chatResponse || isChatSending || chatError) return;
+    if (lastSpokenChatRef.current === chatResponse) return;
+
+    lastSpokenChatRef.current = chatResponse;
+    if (synthesis.isSupported) {
+      setVoiceState("speaking");
+      synthesis.speak(chatResponse, getAgentVoiceProfile(agentName));
+    }
+  }, [agentName, chatError, chatResponse, isChatSending, synthesis, voiceEnabled]);
 
   useEffect(() => {
     if (voiceState === "speaking" && !synthesis.isSpeaking && payload) {
@@ -129,6 +143,36 @@ export const VoiceCommandPanel = forwardRef<
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          onClick={() => {
+            if (!voiceEnabled) {
+              setVoiceEnabled(true);
+              return;
+            }
+
+            synthesis.stop();
+            setVoiceEnabled(false);
+          }}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-zion-line bg-white px-3 text-sm font-semibold text-zion-muted hover:text-zion-text"
+        >
+          {voiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          {voiceEnabled ? "Voice on" : "Voice off"}
+        </button>
+        <button
+          onClick={() => {
+            const text = payload?.responseText ?? chatResponse;
+            if (text && synthesis.isSupported) {
+              setVoiceEnabled(true);
+              setVoiceState("speaking");
+              synthesis.speak(text, getAgentVoiceProfile(payload?.agent ?? agentName));
+            }
+          }}
+          disabled={!synthesis.isSupported || (!payload?.responseText && !chatResponse)}
+          className="inline-flex h-10 items-center gap-2 rounded-lg border border-zion-line bg-white px-3 text-sm font-semibold text-zion-muted hover:text-zion-text disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Volume2 size={16} />
+          Replay
+        </button>
         <button onClick={tryAgain} className="inline-flex h-10 items-center gap-2 rounded-lg border border-zion-line bg-white px-3 text-sm font-semibold text-zion-muted hover:text-zion-text">
           <RefreshCcw size={16} />
           Try again
@@ -164,4 +208,17 @@ function primaryLabel(state: VoiceState, isListening: boolean) {
   if (state === "processing") return "Processing";
   if (state === "speaking") return "Speaking";
   return "Start listening";
+}
+
+function getAgentVoiceProfile(agentName: string) {
+  const name = agentName.toLowerCase();
+
+  if (name.includes("trinity")) return { pitch: 1.08, rate: 0.96, voiceHint: "female" };
+  if (name.includes("morpheus")) return { pitch: 0.88, rate: 0.92, voiceHint: "male" };
+  if (name.includes("cypher")) return { pitch: 0.86, rate: 1.02, voiceHint: "david" };
+  if (name.includes("sparks")) return { pitch: 1.12, rate: 1.04, voiceHint: "zira" };
+  if (name.includes("architect")) return { pitch: 0.94, rate: 0.9, voiceHint: "mark" };
+  if (name.includes("seraph")) return { pitch: 0.9, rate: 0.94, voiceHint: "george" };
+
+  return { pitch: 1, rate: 0.98, voiceHint: "aria" };
 }

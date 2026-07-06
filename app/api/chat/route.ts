@@ -5,9 +5,17 @@ type ChatMessage = {
   content: string;
 };
 
+type ChatFile = {
+  name?: string;
+  type?: string;
+  size?: number;
+  dataUrl?: string;
+};
+
 type ChatRequest = {
   message?: string;
   history?: ChatMessage[];
+  files?: ChatFile[];
   route?: {
     scope?: string;
     container?: string;
@@ -18,6 +26,7 @@ type ChatRequest = {
 };
 
 const DEFAULT_MODEL = "gpt-4.1-mini";
+const MAX_COMBINED_FILE_BYTES = 50 * 1024 * 1024;
 
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
@@ -28,14 +37,25 @@ export async function POST(request: Request) {
 
   const body = (await request.json()) as ChatRequest;
   const message = body.message?.trim();
+  const files = (body.files ?? []).filter((file) => file.name && file.dataUrl);
 
-  if (!message) {
-    return NextResponse.json({ error: "Message is required." }, { status: 400 });
+  if (!message && files.length === 0) {
+    return NextResponse.json({ error: "Message or file is required." }, { status: 400 });
+  }
+
+  const combinedFileBytes = files.reduce((total, file) => total + (file.size ?? 0), 0);
+
+  if (combinedFileBytes > MAX_COMBINED_FILE_BYTES) {
+    return NextResponse.json({ error: "Uploaded files must be 50 MB or less per request." }, { status: 413 });
   }
 
   const model = process.env.OPENAI_MODEL || DEFAULT_MODEL;
   const history = (body.history ?? []).slice(-8);
   const route = body.route;
+
+  const fileSummary = files.length
+    ? `Attached files: ${files.map((file) => `${file.name} (${file.type || "unknown"}, ${file.size ?? 0} bytes)`).join("; ")}.`
+    : "";
 
   const input = [
     {
@@ -45,6 +65,7 @@ export async function POST(request: Request) {
         "Oracle routes user input by scope, container, privacy, agent, and skill before responding.",
         "Stay concise, practical, and clear. Keep unrelated Redstone, Synergy, personal, family, and app-project context separated unless the user explicitly connects them.",
         "If a request is sensitive, recommend privacy-aware handling before storing or sharing details.",
+        "When files are attached, inspect them directly when possible, summarize or edit according to the user's instruction, and call out any file limitations plainly.",
         "Do not claim to have saved memory, created tickets, sent messages, or changed external systems unless the app explicitly confirms that action."
       ].join(" ")
     },
@@ -58,7 +79,17 @@ export async function POST(request: Request) {
     })),
     {
       role: "user",
-      content: message
+      content: [
+        ...files.map((file) => ({
+          type: "input_file",
+          filename: sanitizeFilename(file.name ?? "attachment"),
+          file_data: file.dataUrl
+        })),
+        {
+          type: "input_text",
+          text: [fileSummary, message || "Review the attached file and provide a concise summary with recommended next actions."].filter(Boolean).join("\n\n")
+        }
+      ]
     }
   ];
 
@@ -101,6 +132,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+function sanitizeFilename(filename: string) {
+  return filename.replace(/[^\w.\-()[\] ]+/g, "_").slice(0, 120) || "attachment";
 }
 
 function extractResponseText(data: unknown) {
