@@ -25,6 +25,8 @@ Capture -> Route -> Protect -> Execute -> Store -> Dashboard -> Learn -> Improve
 - Phase 1A integrations: file upload, calendar bridge, web research placeholders.
 - Phase 1B placeholders: Gmail/Outlook, Drive/OneDrive, image generation/editing, GitHub.
 - Finance connector: later, not Phase 1.
+- AI model strategy: default routine chat to the cheapest fast OpenAI API chat model; escalate only when task complexity, risk, context length, coding, multimodal needs, or explicit user instruction requires it.
+- Codex role: Codex is the Operator/build agent for GitHub, code, and app self-improvement workflows, not the default conversational brain.
 
 ## Core Layers
 
@@ -36,6 +38,8 @@ Capture -> Route -> Protect -> Execute -> Store -> Dashboard -> Learn -> Improve
 6. Knowledge Steward Layer
 7. Evolution Engine
 8. Global Preference Intelligence
+9. Cost-Aware AI Orchestration
+10. Operator / GitHub Self-Improvement
 
 ## Global Preference Intelligence
 
@@ -69,6 +73,119 @@ Service foundation:
 
 - `src/services/preferenceIntelligenceService.ts`
 - SQL migration: `db/migrations/001_preference_intelligence.sql`
+
+## Cost-Aware AI Orchestration
+
+Oracle is a provider-agnostic routing and governance layer, not a single model.
+
+Default rule:
+
+- Normal back-and-forth chat uses the cheapest fast OpenAI API chat model.
+- Stronger models are used only through escalation rules.
+- Codex is used only for coding, GitHub, repo review, bug fixes, tests, UI implementation, PRs, and self-improvement.
+- Claude and Gemini remain optional specialist providers for long-document, multimodal, Google Workspace, image/video/document, and advanced synthesis workflows.
+
+Initial provider tiers:
+
+- `openai_fast_chat`: routine chat, quick answers, reminders, dashboard Q&A, memory capture, simple planning, short summaries.
+- `openai_smart_chat`: important writing, business planning, structured analysis, complex reasoning.
+- `openai_codex_operator`: app improvement, bug fixes, repo review, tests, GitHub issue/branch/PR workflows.
+- `claude_long_document`: planned long-document and nuanced writing specialist.
+- `gemini_multimodal`: planned multimodal, Google Workspace, image/video/document specialist.
+
+Oracle classification must include:
+
+- original user input
+- normalized task
+- intent
+- container/project
+- sensitivity
+- risk level
+- required capabilities
+- preferred agent
+- preferred provider
+- approval required
+- estimated cost tier
+- execution mode
+- model selection reason
+
+Cost controls:
+
+- Prefer the fast model by default.
+- Ask before high-cost model use.
+- Track estimated and actual token usage when available.
+- Track estimated and actual provider cost when available.
+- Store provider, model, agent, intent, risk level, status, and selection reason for auditability.
+- Summarize long history before expensive model calls.
+- Do not send full memory or unrelated project data to specialist providers.
+- Let the user set monthly provider budgets and warning thresholds.
+
+Risk levels:
+
+- Level 0: read-only answer.
+- Level 1: draft-only output.
+- Level 2: personal workflow update.
+- Level 3: external action.
+- Level 4: business/client data modification.
+- Level 5: code, infrastructure, deployment, or database change.
+- Level 6: destructive or security-sensitive action.
+
+Approval rules:
+
+- Level 0: no approval.
+- Level 1: user review recommended.
+- Level 2: confirmation optional based on setting.
+- Level 3: explicit approval required.
+- Level 4: explicit approval and audit required.
+- Level 5: staging/preview and explicit approval required.
+- Level 6: multi-step confirmation required.
+
+Service foundation:
+
+- `src/services/aiOrchestrationService.ts`
+- SQL migration: `db/migrations/002_ai_orchestration_self_improvement.sql`
+
+## Operator / GitHub Self-Improvement
+
+App improvement requests captured through voice or text become structured development requests routed to Operator/Codex.
+
+Flow:
+
+```text
+Voice/Text Request -> Oracle classification -> Development Request -> GitHub Issue -> Operator Codex Prompt -> Branch/PR -> Preview -> Sentinel Review -> User Approval -> Merge/Deploy
+```
+
+MVP safety policy:
+
+- Voice commands may create development requests, copy-ready Codex prompts, GitHub issues, branches, pull requests, and preview builds when configured.
+- Voice commands may not directly merge to main, deploy to production, modify production data, delete files, alter authentication, change billing, or change security rules without explicit approval.
+- Auto-merge is disabled.
+- Production deployment is disabled.
+- Production data changes are disabled.
+- Sentinel review is required for level 5 work.
+
+Development request records track:
+
+- title
+- original user input
+- normalized request
+- source
+- target area
+- priority
+- status
+- assigned agent
+- recommended provider
+- approval requirement
+- production write permission
+- acceptance criteria
+- constraints
+- GitHub issue URL
+- branch name
+- PR URL
+- preview URL
+- Sentinel review status
+- GitHub issue body
+- Codex prompt
 
 ## Scopes
 
@@ -206,6 +323,15 @@ Agents do not override privacy.
    - Memory rules
    - Privacy rules
    - Evolution Engine settings
+   - AI Settings: provider settings, cost settings, safety settings, GitHub settings
+
+6. Operator Build Queue
+   - Development requests
+   - GitHub issue status
+   - Codex prompt status
+   - PR/preview status
+   - approval state
+   - Sentinel review status
 
 ## Phase 1A Build Focus
 

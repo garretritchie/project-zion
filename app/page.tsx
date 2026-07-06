@@ -10,12 +10,15 @@ import {
   CheckCircle2,
   ChevronRight,
   CircleDot,
+  Code2,
   Command,
   Database,
+  DollarSign,
   FileText,
   Fingerprint,
   FolderKanban,
   Gauge,
+  GitPullRequest,
   GitBranch,
   Inbox,
   Layers3,
@@ -38,7 +41,7 @@ import {
   Zap
 } from "lucide-react";
 
-type Tab = "Command" | "Dashboard" | "Knowledge" | "Vault" | "Settings";
+type Tab = "Command" | "Dashboard" | "Knowledge" | "Operator" | "Vault" | "Settings";
 type Scope = "All" | "Work" | "Personal" | "Mixed";
 type IntelligenceTab = "Preferences" | "Watchlist" | "Usage Trends";
 type UploadedFile = {
@@ -52,6 +55,7 @@ const tabs: Array<{ name: Tab; icon: typeof Command }> = [
   { name: "Command", icon: Command },
   { name: "Dashboard", icon: Gauge },
   { name: "Knowledge", icon: Database },
+  { name: "Operator", icon: Code2 },
   { name: "Vault", icon: Vault },
   { name: "Settings", icon: Settings }
 ];
@@ -251,6 +255,116 @@ const usageTrends = [
   }
 ];
 
+const aiProviders = [
+  {
+    name: "OpenAI Fast Chat",
+    provider: "openai",
+    model: "gpt-5.4-nano",
+    fallback: "gpt-5.4-mini",
+    tier: "low",
+    status: "Enabled",
+    role: "Routine chat, dashboard Q&A, memory capture, reminders, short summaries"
+  },
+  {
+    name: "OpenAI Smart Chat",
+    provider: "openai",
+    model: "gpt-5.4-mini",
+    fallback: "gpt-5.4",
+    tier: "medium",
+    status: "Enabled",
+    role: "Business writing, planning, structured analysis, complex reasoning"
+  },
+  {
+    name: "OpenAI Codex / Operator",
+    provider: "openai_codex",
+    model: "gpt-5.3-codex",
+    fallback: "Smart Chat",
+    tier: "high",
+    status: "Configured gate",
+    role: "Code, GitHub, repo review, tests, app improvement, PR workflows"
+  },
+  {
+    name: "Claude Long Document",
+    provider: "anthropic",
+    model: "claude-haiku-4.5",
+    fallback: "Smart Chat",
+    tier: "medium",
+    status: "Disabled",
+    role: "Planned long-document review and nuanced writing specialist"
+  },
+  {
+    name: "Gemini Multimodal",
+    provider: "google_gemini",
+    model: "gemini-flash-lite",
+    fallback: "Smart Chat",
+    tier: "medium",
+    status: "Disabled",
+    role: "Planned multimodal, Google Workspace, image, video, document workflows"
+  }
+];
+
+const routingPolicies = [
+  { intent: "general_chat", agent: "Zion", provider: "OpenAI Fast Chat", risk: "L0", mode: "answer_now", approval: "No" },
+  { intent: "business_analysis", agent: "Analyst", provider: "OpenAI Smart Chat", risk: "L2", mode: "draft_only", approval: "No" },
+  { intent: "document_review", agent: "Scout", provider: "Claude or Smart fallback", risk: "L2", mode: "approval_required", approval: "High-cost gate" },
+  { intent: "multimodal_analysis", agent: "Scout", provider: "Gemini or Smart fallback", risk: "L2", mode: "approval_required", approval: "High-cost gate" },
+  { intent: "app_improvement", agent: "Operator", provider: "Codex", risk: "L5", mode: "development_request", approval: "Required" },
+  { intent: "security_review", agent: "Sentinel", provider: "Smart Chat", risk: "L6", mode: "approval_required", approval: "Multi-step" }
+];
+
+const developmentRequests = [
+  {
+    title: "Show active watch items more clearly",
+    original: "Oracle, the dashboard should show my active watch items more clearly.",
+    normalized: "Improve the Dashboard Intelligence watchlist so active watch items are easier to scan.",
+    source: "voice",
+    target: "Dashboard / Intelligence",
+    priority: "medium",
+    status: "ready_for_github",
+    github: "Copy-ready issue",
+    codex: "Prompt ready",
+    pr: "Not started",
+    approval: "Required",
+    sentinel: "Not requested"
+  },
+  {
+    title: "Add AI provider routing controls",
+    original: "Add model routing and cost controls to the MVP.",
+    normalized: "Add AI Settings controls for provider tiers, cost gates, risk levels, and GitHub/Codex workflow safety.",
+    source: "text",
+    target: "AI Settings",
+    priority: "high",
+    status: "captured",
+    github: "Not connected",
+    codex: "Prompt available",
+    pr: "Not started",
+    approval: "Required",
+    sentinel: "Required before merge"
+  }
+];
+
+const aiCostSettings = [
+  ["Prefer cheapest model by default", "Enabled"],
+  ["Ask before high-cost model", "Enabled"],
+  ["Monthly AI budget", "$100 configurable"],
+  ["Warning threshold", "80%"],
+  ["Log token usage", "Enabled"],
+  ["Show cost estimates", "Enabled"],
+  ["Disable premium without approval", "Enabled"]
+];
+
+const aiSafetySettings = [
+  ["Require approval above risk level", "Level 2"],
+  ["Allow voice-created development requests", "Enabled"],
+  ["Allow automatic GitHub issue creation", "Only when configured"],
+  ["Allow automatic branch creation", "Disabled"],
+  ["Allow automatic PR creation", "Disabled"],
+  ["Allow automatic merge", "Disabled"],
+  ["Allow production deployment", "Disabled"],
+  ["Allow production data changes", "Disabled"],
+  ["Require Sentinel review for Level 5", "Enabled"]
+];
+
 const knowledgeItems = [
   { title: "Zion MVP opens to Command orb", type: "decision", scope: "Mixed", privacy: "L1 Normal", tags: ["dashboard", "command"] },
   { title: "Vault items require explicit unlock", type: "privacy rule", scope: "Personal", privacy: "L4 Vault", tags: ["vault", "self-only"] },
@@ -270,6 +384,22 @@ const integrations = [
 
 function routeInput(input: string) {
   const text = input.toLowerCase();
+
+  if (text.includes("codex") || text.includes("github") || text.includes("improve this app") || text.includes("fix this bug") || text.includes("app improvement") || text.includes("pull request")) {
+    return {
+      scope: "Work",
+      container: "Project Zion",
+      privacy: "L5 Code / Approval",
+      agent: "Operator + Sentinel",
+      skill: "App Self-Improvement",
+      confidence: "95%",
+      action: "Capture as a development request, stage for GitHub/Codex, and require approval before merge or deployment.",
+      compactContainer: "Project Zion",
+      compactAgent: "Operator",
+      compactSkill: "Codex",
+      tags: ["development-request", "github-ready", "sentinel-review"]
+    };
+  }
 
   if (text.includes("relationship") || text.includes("romantic") || text.includes("mental health") || text.includes("therapy")) {
     return {
@@ -437,6 +567,7 @@ export default function Home() {
         )}
         {activeTab === "Dashboard" && <DashboardView />}
         {activeTab === "Knowledge" && <KnowledgeView />}
+        {activeTab === "Operator" && <OperatorView />}
         {activeTab === "Vault" && <VaultView />}
         {activeTab === "Settings" && <SettingsView />}
       </div>
@@ -849,6 +980,87 @@ function KnowledgeView() {
   );
 }
 
+function OperatorView() {
+  return (
+    <section className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[0.72fr_1.28fr] lg:p-6">
+      <Panel title="Operator Build Queue" action="GitHub/Codex gated">
+        <div className="space-y-3">
+          {developmentRequests.map((request) => (
+            <article key={request.title} className="rounded-lg border border-zion-line bg-zion-panel2 p-4">
+              <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold">{request.title}</h3>
+                  <p className="mt-2 text-xs leading-5 text-zion-muted">{request.normalized}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill>{request.priority}</StatusPill>
+                  <StatusPill>{request.status}</StatusPill>
+                  <StatusPill>{request.source}</StatusPill>
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                <InfoBlock label="Target area" value={request.target} />
+                <InfoBlock label="GitHub issue" value={request.github} />
+                <InfoBlock label="Codex prompt" value={request.codex} />
+                <InfoBlock label="PR / Preview" value={`${request.pr} / approval ${request.approval}`} />
+                <InfoBlock label="Sentinel" value={request.sentinel} />
+                <InfoBlock label="Original request" value={request.original} />
+              </div>
+              <ActionRow
+                actions={[
+                  "View request",
+                  "Edit normalized request",
+                  "Generate Codex prompt",
+                  "Copy Codex prompt",
+                  "Create GitHub issue",
+                  "Mark ready for Codex",
+                  "Mark in progress",
+                  "Add PR URL",
+                  "Add preview URL",
+                  "Request Sentinel review",
+                  "Approve",
+                  "Reject",
+                  "Complete"
+                ]}
+              />
+            </article>
+          ))}
+        </div>
+      </Panel>
+      <div className="grid content-start gap-4">
+        <Panel title="Self-Improvement Policy" action="Level 5 gate">
+          <div className="space-y-3 text-sm leading-6 text-zion-muted">
+            <p>Voice and text requests can create development requests, GitHub issues, Codex prompts, branches, pull requests, and preview builds.</p>
+            <p>They cannot merge to main, deploy to production, modify production data, delete files, alter authentication, change billing, or change security rules without explicit approval.</p>
+          </div>
+          <div className="mt-4 grid gap-2">
+            <MiniStat label="Auto-merge" value="Disabled" />
+            <MiniStat label="Production deploy" value="Disabled" />
+            <MiniStat label="Sentinel review" value="Required" />
+          </div>
+        </Panel>
+        <Panel title="Codex Prompt Rules" action="Always included">
+          <div className="grid gap-2">
+            {[
+              "Do not rebuild the app.",
+              "Preserve existing functionality.",
+              "Create a branch and PR or provide patch instructions.",
+              "Do not modify production data.",
+              "Do not change auth, permissions, billing, or security rules without approval.",
+              "Return files changed and manual QA steps."
+            ].map((rule) => (
+              <div key={rule} className="flex gap-2 rounded-lg border border-zion-line bg-zion-panel2 p-3 text-sm text-zion-muted">
+                <ShieldCheck className="mt-0.5 shrink-0 text-zion-cyan" size={16} />
+                {rule}
+              </div>
+            ))}
+          </div>
+        </Panel>
+      </div>
+    </section>
+  );
+}
+
 function VaultView() {
   return (
     <section className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[0.72fr_1.28fr] lg:p-6">
@@ -915,6 +1127,73 @@ function SettingsView() {
               <span className="text-xs text-zion-muted">
                 {integration.phase} / {integration.status}
               </span>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <Panel title="AI Provider Settings" action="Cost-aware routing">
+        <div className="space-y-3">
+          {aiProviders.map((provider) => (
+            <div key={provider.name} className="rounded-lg border border-zion-line bg-zion-panel2 p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold">{provider.name}</h3>
+                  <p className="mt-1 text-xs leading-5 text-zion-muted">{provider.role}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <StatusPill>{provider.status}</StatusPill>
+                  <StatusPill>{provider.tier}</StatusPill>
+                </div>
+              </div>
+              <div className="mt-3 grid gap-2 text-xs text-zion-muted sm:grid-cols-3">
+                <span>{provider.provider}</span>
+                <span>Model: {provider.model}</span>
+                <span>Fallback: {provider.fallback}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <Panel title="Model Routing Rules" action="Oracle">
+        <div className="space-y-2">
+          {routingPolicies.map((policy) => (
+            <div key={policy.intent} className="grid gap-2 rounded-lg border border-zion-line bg-zion-panel2 p-3 text-sm lg:grid-cols-[1fr_auto]">
+              <div>
+                <p className="font-semibold">{policy.intent}</p>
+                <p className="mt-1 text-xs text-zion-muted">
+                  {policy.agent} / {policy.provider} / {policy.mode}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 lg:justify-end">
+                <StatusPill>{policy.risk}</StatusPill>
+                <StatusPill>{policy.approval}</StatusPill>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <Panel title="AI Cost Controls" action="Budget guard">
+        <div className="grid gap-2">
+          {aiCostSettings.map(([label, value]) => (
+            <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-zion-line bg-zion-panel2 px-3 py-2">
+              <span className="inline-flex items-center gap-2 text-sm text-zion-muted">
+                <DollarSign size={15} className="text-zion-cyan" />
+                {label}
+              </span>
+              <span className="text-sm font-semibold">{value}</span>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <Panel title="GitHub & Safety Settings" action="Approval first">
+        <div className="grid gap-2">
+          {aiSafetySettings.map(([label, value]) => (
+            <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-zion-line bg-zion-panel2 px-3 py-2">
+              <span className="inline-flex items-center gap-2 text-sm text-zion-muted">
+                <GitPullRequest size={15} className="text-zion-cyan" />
+                {label}
+              </span>
+              <span className="text-right text-sm font-semibold">{value}</span>
             </div>
           ))}
         </div>
