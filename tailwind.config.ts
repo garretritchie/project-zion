@@ -10,18 +10,18 @@ const config: Config = {
     extend: {
       colors: {
         zion: {
-          bg: "#090b0d",
-          panel: "#111417",
-          panel2: "#171b1f",
-          line: "#262d33",
-          text: "#eef3f5",
-          muted: "#9aa7ad",
-          cyan: "#63e6d2",
-          gold: "#e4bf6a"
+          bg: "#f4f7f9",
+          panel: "#ffffff",
+          panel2: "#eef4f6",
+          line: "#dbe5e8",
+          text: "#162126",
+          muted: "#65757c",
+          cyan: "#0ba7a0",
+          gold: "#b8842d"
         }
       },
       boxShadow: {
-        command: "0 24px 80px rgba(0, 0, 0, 0.42)"
+        command: "0 24px 80px rgba(28, 44, 52, 0.14)"
       }
     }
   },
