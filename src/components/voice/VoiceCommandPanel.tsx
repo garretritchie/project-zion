@@ -18,8 +18,11 @@ export const VoiceCommandPanel = forwardRef<
   {
     payload: ZionRoutingPayload | null;
     onPayload: (payload: ZionRoutingPayload) => void;
+    chatResponse?: string;
+    chatError?: string | null;
+    isChatSending?: boolean;
   }
->(function VoiceCommandPanel({ payload, onPayload }, ref) {
+>(function VoiceCommandPanel({ payload, onPayload, chatResponse, chatError, isChatSending }, ref) {
   const recognition = useSpeechRecognition();
   const synthesis = useSpeechSynthesis();
   const processedTranscriptRef = useRef("");
@@ -109,7 +112,12 @@ export const VoiceCommandPanel = forwardRef<
         </div>
         <div className="rounded-lg border border-zion-line bg-zion-panel2 p-3">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-zion-muted">Response</p>
-          <p className="mt-2 text-sm leading-6 text-zion-text">{payload?.responseText ?? 'Click Speak and say "Hello Zion" to test the browser voice flow.'}</p>
+          <p className="mt-2 text-sm leading-6 text-zion-text">
+            {isChatSending
+              ? "Zion is thinking..."
+              : payload?.responseText ?? chatResponse ?? 'Type a command, click Send, or click Speak and say "Hello Zion".'}
+          </p>
+          {chatError && <p className="mt-2 text-xs text-red-700">{chatError}</p>}
           {payload && !synthesis.isSupported && <p className="mt-2 text-xs text-zion-muted">Speech output is not supported in this browser.</p>}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">

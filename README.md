@@ -13,6 +13,15 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+The main command chat uses a server-side OpenAI API route. Create `.env.local` for local development:
+
+```bash
+OPENAI_API_KEY=your_openai_api_key
+OPENAI_MODEL=gpt-5.4-nano
+```
+
+Do not commit `.env.local`.
+
 ## Current Foundation
 
 - Next.js App Router

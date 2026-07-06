@@ -53,6 +53,10 @@ type UploadedFile = {
   size: number;
   type: string;
 };
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 const tabs: Array<{ name: Tab; icon: typeof Command }> = [
   { name: "Command", icon: Command },
@@ -505,8 +509,53 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [latestVoicePayload, setLatestVoicePayload] = useState<ZionRoutingPayload | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [isChatSending, setIsChatSending] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const voicePanelRef = useRef<VoiceCommandPanelHandle | null>(null);
   const route = useMemo(() => routeInput(input), [input]);
+
+  const sendChatMessage = async () => {
+    const message = input.trim();
+    if (!message || isChatSending) return;
+
+    const userMessage: ChatMessage = { role: "user", content: message };
+    const nextMessages = [...chatMessages, userMessage];
+    setChatMessages(nextMessages);
+    setInput("");
+    setIsChatSending(true);
+    setChatError(null);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message,
+          history: chatMessages.slice(-8),
+          route: {
+            scope: route.scope,
+            container: route.container,
+            privacy: route.privacy,
+            agent: route.agent,
+            skill: route.skill
+          }
+        })
+      });
+      const data = (await response.json()) as { response?: string; error?: string };
+
+      if (!response.ok) {
+        throw new Error(data.error ?? "Zion could not complete the request.");
+      }
+
+      setChatMessages([...nextMessages, { role: "assistant", content: data.response ?? "" }]);
+    } catch (error) {
+      setChatError(error instanceof Error ? error.message : "Zion could not complete the request.");
+      setChatMessages(chatMessages);
+    } finally {
+      setIsChatSending(false);
+    }
+  };
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-zion-bg p-2 text-zion-text sm:p-5">
@@ -572,6 +621,10 @@ export default function Home() {
             onStartVoice={() => voicePanelRef.current?.startListening()}
             onVoicePayload={setLatestVoicePayload}
             voicePanelRef={voicePanelRef}
+            onSendChat={sendChatMessage}
+            isChatSending={isChatSending}
+            chatError={chatError}
+            latestChatResponse={[...chatMessages].reverse().find((message) => message.role === "assistant")?.content}
           />
         )}
         {activeTab === "Dashboard" && <DashboardView />}
@@ -593,7 +646,11 @@ function CommandView({
   latestVoicePayload,
   onStartVoice,
   onVoicePayload,
-  voicePanelRef
+  voicePanelRef,
+  onSendChat,
+  isChatSending,
+  chatError,
+  latestChatResponse
 }: {
   input: string;
   setInput: (value: string) => void;
@@ -604,6 +661,10 @@ function CommandView({
   onStartVoice: () => void;
   onVoicePayload: (payload: ZionRoutingPayload) => void;
   voicePanelRef: RefObject<VoiceCommandPanelHandle | null>;
+  onSendChat: () => void;
+  isChatSending: boolean;
+  chatError: string | null;
+  latestChatResponse?: string;
 }) {
   const handleFiles = (files: FileList | null) => {
     if (!files) {
@@ -659,7 +720,7 @@ function CommandView({
             </div>
 
             <div className="mt-3 w-full rounded-xl border border-zion-line bg-zion-panel2 p-3 sm:mt-4">
-              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-1.5 sm:grid-cols-[1fr_auto_auto_auto] sm:gap-3">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] gap-1.5 sm:grid-cols-[1fr_auto_auto_auto] sm:gap-3">
                 <label className="sr-only" htmlFor="command-input">
                   Command input
                 </label>
@@ -667,6 +728,12 @@ function CommandView({
                   id="command-input"
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      onSendChat();
+                    }
+                  }}
                   className="order-2 min-h-12 w-full min-w-0 rounded-lg border border-zion-line bg-white px-3 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan sm:order-none sm:px-4"
                   placeholder="Brain dump, ask, route, draft, research, plan..."
                 />
@@ -685,7 +752,12 @@ function CommandView({
                   />
                 </label>
                 <VoiceButton onClick={onStartVoice} />
-                <button className="hidden h-12 w-12 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm sm:grid">
+                <button
+                  onClick={onSendChat}
+                  disabled={isChatSending}
+                  className="grid h-12 w-9 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm disabled:cursor-not-allowed disabled:opacity-60 sm:w-12"
+                  aria-label="Send command"
+                >
                   <Send size={16} />
                 </button>
               </div>
@@ -721,7 +793,14 @@ function CommandView({
           </div>
         </section>
 
-        <VoiceCommandPanel ref={voicePanelRef} payload={latestVoicePayload} onPayload={onVoicePayload} />
+        <VoiceCommandPanel
+          ref={voicePanelRef}
+          payload={latestVoicePayload}
+          onPayload={onVoicePayload}
+          chatResponse={latestChatResponse}
+          chatError={chatError}
+          isChatSending={isChatSending}
+        />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
