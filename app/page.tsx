@@ -31,13 +31,21 @@ import {
   ShieldCheck,
   Sparkles,
   Tags,
+  Upload,
   UserRoundCog,
   Vault,
+  X,
   Zap
 } from "lucide-react";
 
 type Tab = "Command" | "Dashboard" | "Knowledge" | "Vault" | "Settings";
 type Scope = "All" | "Work" | "Personal" | "Mixed";
+type UploadedFile = {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+};
 
 const tabs: Array<{ name: Tab; icon: typeof Command }> = [
   { name: "Command", icon: Command },
@@ -229,6 +237,7 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState<Tab>("Command");
   const [activeScope, setActiveScope] = useState<Scope>("All");
   const [input, setInput] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const route = useMemo(() => routeInput(input), [input]);
 
   return (
@@ -284,7 +293,15 @@ export default function Home() {
           </div>
         </header>
 
-        {activeTab === "Command" && <CommandView input={input} setInput={setInput} route={route} />}
+        {activeTab === "Command" && (
+          <CommandView
+            input={input}
+            setInput={setInput}
+            route={route}
+            uploadedFiles={uploadedFiles}
+            setUploadedFiles={setUploadedFiles}
+          />
+        )}
         {activeTab === "Dashboard" && <DashboardView />}
         {activeTab === "Knowledge" && <KnowledgeView />}
         {activeTab === "Vault" && <VaultView />}
@@ -297,12 +314,36 @@ export default function Home() {
 function CommandView({
   input,
   setInput,
-  route
+  route,
+  uploadedFiles,
+  setUploadedFiles
 }: {
   input: string;
   setInput: (value: string) => void;
   route: ReturnType<typeof routeInput>;
+  uploadedFiles: UploadedFile[];
+  setUploadedFiles: (files: UploadedFile[]) => void;
 }) {
+  const handleFiles = (files: FileList | null) => {
+    if (!files) {
+      return;
+    }
+
+    const nextFiles = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}`,
+      name: file.name,
+      size: file.size,
+      type: file.type || "unknown"
+    }));
+
+    const existingIds = new Set(uploadedFiles.map((file) => file.id));
+    setUploadedFiles([...uploadedFiles, ...nextFiles.filter((file) => !existingIds.has(file.id))]);
+  };
+
+  const removeFile = (fileId: string) => {
+    setUploadedFiles(uploadedFiles.filter((file) => file.id !== fileId));
+  };
+
   return (
     <section className="grid min-w-0 gap-4 p-3 sm:p-4 xl:grid-cols-[0.72fr_1.22fr_0.86fr] lg:p-6">
       <aside className="order-2 hidden content-start gap-4 sm:grid xl:order-1">
@@ -313,8 +354,8 @@ function CommandView({
         </Panel>
       </aside>
 
-      <section className="order-1 flex min-w-0 flex-col items-center justify-center rounded-xl border border-zion-line bg-[radial-gradient(circle_at_50%_22%,rgba(11,167,160,0.12),transparent_34rem),linear-gradient(180deg,#ffffff,#f7fbfb)] p-3 shadow-command sm:min-h-[560px] sm:p-5 xl:order-2 xl:min-h-[650px]">
-        <div className="w-full min-w-0 max-w-3xl rounded-xl border border-zion-line bg-white p-4 shadow-command sm:p-7">
+      <section className="order-1 flex min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-zion-line bg-[radial-gradient(circle_at_50%_22%,rgba(11,167,160,0.12),transparent_34rem),linear-gradient(180deg,#ffffff,#f7fbfb)] p-3 shadow-command sm:min-h-[560px] sm:p-5 xl:order-2 xl:min-h-[650px]">
+        <div className="w-full min-w-0 max-w-[calc(100vw-2.75rem)] rounded-xl border border-zion-line bg-white p-4 shadow-command sm:max-w-3xl sm:p-7">
           <div className="hidden flex-col items-start justify-between gap-4 sm:flex sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-zion-cyan">Command</p>
@@ -335,8 +376,8 @@ function CommandView({
             </div>
           </div>
 
-          <div className="mt-3 rounded-xl border border-zion-line bg-zion-panel2 p-3 sm:mt-4">
-            <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
+          <div className="mt-3 w-full max-w-[calc(100vw-4.5rem)] rounded-xl border border-zion-line bg-zion-panel2 p-3 sm:mt-4 sm:max-w-none">
+            <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-1.5 sm:grid-cols-[1fr_auto_auto_auto] sm:gap-3">
               <label className="sr-only" htmlFor="command-input">
                 Command input
               </label>
@@ -344,17 +385,51 @@ function CommandView({
                 id="command-input"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                className="min-h-12 w-full min-w-0 rounded-lg border border-zion-line bg-white px-4 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan"
+                className="order-2 min-h-12 w-full min-w-0 rounded-lg border border-zion-line bg-white px-3 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan sm:order-none sm:px-4"
                 placeholder="Brain dump, ask, route, draft, research, plan..."
               />
-              <button className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-zion-line bg-zion-panel px-4 text-sm font-semibold text-zion-text">
+              <label className="order-1 inline-flex h-12 w-9 cursor-pointer items-center justify-center gap-2 rounded-lg border border-zion-line bg-white px-0 text-sm font-semibold text-zion-text transition hover:border-zion-cyan/60 sm:order-none sm:w-auto sm:px-4">
+                <Upload size={16} />
+                <span className="hidden sm:inline">Upload</span>
+                <input
+                  className="sr-only"
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp,application/pdf,text/*,image/*"
+                  onChange={(event) => {
+                    handleFiles(event.target.files);
+                    event.target.value = "";
+                  }}
+                />
+              </label>
+              <button className="hidden h-12 items-center justify-center gap-2 rounded-lg border border-zion-line bg-zion-panel px-4 text-sm font-semibold text-zion-text sm:inline-flex">
                 <Mic2 size={17} />
                 Speak
               </button>
-              <button className="grid h-12 w-12 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm">
-                <Send size={17} />
+              <button className="hidden h-12 w-12 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm sm:grid">
+                <Send size={16} />
               </button>
             </div>
+            {uploadedFiles.length > 0 && (
+              <div className="mt-3 grid gap-2">
+                {uploadedFiles.map((file) => (
+                  <div key={file.id} className="flex items-center gap-3 rounded-lg border border-zion-line bg-white px-3 py-2 text-sm">
+                    <FileText className="shrink-0 text-zion-cyan" size={17} />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-zion-text">{file.name}</p>
+                      <p className="text-xs text-zion-muted">{formatFileSize(file.size)} / queued for summarize, edit, or knowledge intake</p>
+                    </div>
+                    <button
+                      aria-label={`Remove ${file.name}`}
+                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-zion-line text-zion-muted hover:text-zion-text"
+                      onClick={() => removeFile(file.id)}
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
@@ -362,14 +437,18 @@ function CommandView({
             <RouteTile label="Container" value={route.compactContainer} />
             <RouteTile label="Privacy" value={route.privacy} />
             <RouteTile label="Agent" value={route.compactAgent} />
-            <RouteTile label="Skill" value={route.compactSkill} />
+            <RouteTile label="Skill" value={uploadedFiles.length ? "File Intake" : route.compactSkill} />
           </div>
         </div>
       </section>
 
       <aside className="order-3 hidden content-start gap-4 sm:grid">
         <Panel title="Routing Payload" action={route.confidence}>
-          <p className="text-sm leading-6 text-zion-muted">{route.action}</p>
+          <p className="text-sm leading-6 text-zion-muted">
+            {uploadedFiles.length
+              ? `${uploadedFiles.length} file${uploadedFiles.length === 1 ? "" : "s"} queued. Oracle should classify privacy, summarize or edit, and store the output in Knowledge.`
+              : route.action}
+          </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {route.tags.map((tag) => (
               <Tag key={tag}>{tag}</Tag>
@@ -388,6 +467,18 @@ function CommandView({
       </aside>
     </section>
   );
+}
+
+function formatFileSize(size: number) {
+  if (size < 1024) {
+    return `${size} B`;
+  }
+
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(1)} KB`;
+  }
+
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function DashboardView() {
