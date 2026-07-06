@@ -232,18 +232,18 @@ export default function Home() {
   const route = useMemo(() => routeInput(input), [input]);
 
   return (
-    <main className="min-h-screen overflow-x-hidden bg-zion-bg p-3 text-zion-text sm:p-5">
-      <div className="mx-auto min-h-[calc(100vh-40px)] max-w-[1560px] overflow-hidden rounded-xl border border-zion-line bg-[#07111a]/90 shadow-command">
-        <header className="border-b border-zion-line bg-[#09151f]/95 px-4 py-4 lg:px-6">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex items-center gap-3">
+    <main className="min-h-screen overflow-x-hidden bg-zion-bg p-2 text-zion-text sm:p-5">
+      <div className="mx-auto min-h-[calc(100vh-24px)] w-full max-w-full overflow-hidden rounded-xl border border-zion-line bg-white/88 shadow-command sm:min-h-[calc(100vh-40px)] 2xl:max-w-[1560px]">
+        <header className="min-w-0 border-b border-zion-line bg-white/92 px-4 py-4 backdrop-blur lg:px-6">
+          <div className="flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
               <div className="grid h-11 w-11 place-items-center rounded-lg border border-zion-line bg-zion-panel text-lg font-bold text-zion-cyan">Z</div>
-              <div>
+              <div className="min-w-0">
                 <h1 className="text-xl font-semibold tracking-normal">Zion</h1>
                 <p className="text-sm text-zion-muted">Private AI command center for routing, privacy, knowledge, and daily focus.</p>
               </div>
             </div>
-            <nav className="flex flex-wrap gap-2">
+            <nav className="grid w-full min-w-0 grid-cols-1 gap-2 sm:flex sm:w-auto sm:flex-wrap">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const active = activeTab === tab.name;
@@ -251,7 +251,7 @@ export default function Home() {
                   <button
                     key={tab.name}
                     onClick={() => setActiveTab(tab.name)}
-                    className={`inline-flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition ${
+                    className={`inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition ${
                       active ? "border-zion-cyan/60 bg-zion-cyan/12 text-zion-cyan" : "border-zion-line bg-zion-panel text-zion-muted hover:text-zion-text"
                     }`}
                   >
@@ -262,8 +262,8 @@ export default function Home() {
               })}
             </nav>
           </div>
-          <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex flex-wrap gap-2">
+          <div className="mt-4 flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
               {scopes.map((scope) => (
                 <button
                   key={scope}
@@ -276,7 +276,7 @@ export default function Home() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-3 rounded-lg border border-zion-line bg-zion-panel px-3 py-2 text-sm text-zion-muted">
+            <div className="flex w-full items-center gap-3 rounded-lg border border-zion-line bg-zion-panel px-3 py-2 text-sm text-zion-muted lg:w-auto">
               <LockKeyhole size={16} className="text-zion-gold" />
               Vault locked
               <span className="rounded border border-zion-line px-2 py-0.5 text-xs">counts only</span>
@@ -304,8 +304,8 @@ function CommandView({
   route: ReturnType<typeof routeInput>;
 }) {
   return (
-    <section className="grid gap-5 p-4 xl:grid-cols-[0.72fr_1.22fr_0.86fr] lg:p-6">
-      <aside className="grid content-start gap-4">
+    <section className="grid min-w-0 gap-4 p-3 sm:p-4 xl:grid-cols-[0.72fr_1.22fr_0.86fr] lg:p-6">
+      <aside className="order-2 hidden content-start gap-4 sm:grid xl:order-1">
         <Panel title="Scope Containers" action="Seeded">
           <ContainerGroup title="Work" items={containers.Work.slice(0, 5)} />
           <ContainerGroup title="Personal" items={containers.Personal.slice(0, 5)} />
@@ -313,9 +313,9 @@ function CommandView({
         </Panel>
       </aside>
 
-      <section className="flex min-h-[650px] flex-col items-center justify-center rounded-xl border border-zion-line bg-[radial-gradient(circle_at_50%_22%,rgba(89,230,222,0.13),transparent_34rem),linear-gradient(180deg,#0b1721,#08111a)] p-5 shadow-command">
-        <div className="w-full max-w-3xl rounded-xl border border-zion-line bg-[#09151f]/92 p-5 shadow-command sm:p-7">
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+      <section className="order-1 flex min-w-0 flex-col items-center justify-center rounded-xl border border-zion-line bg-[radial-gradient(circle_at_50%_22%,rgba(11,167,160,0.12),transparent_34rem),linear-gradient(180deg,#ffffff,#f7fbfb)] p-3 shadow-command sm:min-h-[560px] sm:p-5 xl:order-2 xl:min-h-[650px]">
+        <div className="w-full min-w-0 max-w-3xl rounded-xl border border-zion-line bg-white p-4 shadow-command sm:p-7">
+          <div className="hidden flex-col items-start justify-between gap-4 sm:flex sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-zion-cyan">Command</p>
               <h2 className="mt-1 text-3xl font-semibold tracking-normal">Oracle is ready</h2>
@@ -327,15 +327,15 @@ function CommandView({
             </span>
           </div>
 
-          <div className="relative mx-auto mt-10 grid h-72 w-72 place-items-center sm:h-80 sm:w-80">
-            <div className="zion-orb-ring absolute h-full w-full rounded-full bg-[radial-gradient(circle,rgba(89,230,222,0.16),transparent_64%)]" />
-            <div className="zion-orb-ring absolute h-[78%] w-[78%] rounded-full border border-zion-cyan/30 bg-[radial-gradient(circle,rgba(233,241,244,0.12),rgba(89,230,222,0.08)_48%,transparent_72%)] [animation-delay:0.35s]" />
-            <div className="zion-orb-core relative grid h-44 w-44 place-items-center overflow-hidden rounded-full border border-white/20 bg-[radial-gradient(circle_at_35%_28%,#e9f1f4_0%,#9ff8f3_20%,#0aa79f_56%,#063d46_100%)] shadow-[0_28px_90px_rgba(89,230,222,0.25)] before:absolute before:inset-[-32%] before:bg-[conic-gradient(from_90deg,transparent,#ffffff99,transparent,#d6b45f66,transparent)]">
-              <Command className="relative z-10 text-white drop-shadow" size={46} strokeWidth={1.7} />
+          <div className="relative mx-auto grid h-44 w-44 place-items-center sm:mt-10 sm:h-80 sm:w-80">
+            <div className="zion-orb-ring absolute h-full w-full rounded-full bg-[radial-gradient(circle,rgba(11,167,160,0.16),transparent_64%)]" />
+            <div className="zion-orb-ring absolute h-[78%] w-[78%] rounded-full border border-zion-cyan/30 bg-[radial-gradient(circle,rgba(255,255,255,0.82),rgba(11,167,160,0.10)_48%,transparent_72%)] [animation-delay:0.35s]" />
+            <div className="zion-orb-core relative grid h-28 w-28 place-items-center overflow-hidden rounded-full border border-white bg-[radial-gradient(circle_at_35%_28%,#ffffff_0%,#d8fff9_24%,#0ba7a0_58%,#066a68_100%)] shadow-[0_28px_90px_rgba(11,167,160,0.24)] before:absolute before:inset-[-32%] before:bg-[conic-gradient(from_90deg,transparent,#ffffff99,transparent,#b8852f66,transparent)] sm:h-44 sm:w-44">
+              <Command className="relative z-10 text-white drop-shadow" size={38} strokeWidth={1.7} />
             </div>
           </div>
 
-          <div className="mt-4 rounded-xl border border-zion-line bg-zion-panel2 p-3">
+          <div className="mt-3 rounded-xl border border-zion-line bg-zion-panel2 p-3 sm:mt-4">
             <div className="grid gap-3 sm:grid-cols-[1fr_auto_auto]">
               <label className="sr-only" htmlFor="command-input">
                 Command input
@@ -344,7 +344,7 @@ function CommandView({
                 id="command-input"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
-                className="min-h-12 flex-1 rounded-lg border border-zion-line bg-[#08111a] px-4 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan"
+                className="min-h-12 w-full min-w-0 rounded-lg border border-zion-line bg-white px-4 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan"
                 placeholder="Brain dump, ask, route, draft, research, plan..."
               />
               <button className="inline-flex h-12 items-center justify-center gap-2 rounded-lg border border-zion-line bg-zion-panel px-4 text-sm font-semibold text-zion-text">
@@ -357,7 +357,7 @@ function CommandView({
             </div>
           </div>
 
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
             <RouteTile label="Scope" value={route.scope} />
             <RouteTile label="Container" value={route.compactContainer} />
             <RouteTile label="Privacy" value={route.privacy} />
@@ -367,7 +367,7 @@ function CommandView({
         </div>
       </section>
 
-      <aside className="grid content-start gap-4">
+      <aside className="order-3 hidden content-start gap-4 sm:grid">
         <Panel title="Routing Payload" action={route.confidence}>
           <p className="text-sm leading-6 text-zion-muted">{route.action}</p>
           <div className="mt-4 flex flex-wrap gap-2">
@@ -392,7 +392,7 @@ function CommandView({
 
 function DashboardView() {
   return (
-    <section className="p-4 lg:p-6">
+    <section className="p-3 sm:p-4 lg:p-6">
       <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">AI-curated dashboard</h2>
@@ -426,7 +426,7 @@ function DashboardView() {
 
 function KnowledgeView() {
   return (
-    <section className="grid gap-5 p-4 xl:grid-cols-[1fr_0.58fr] lg:p-6">
+    <section className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[1fr_0.58fr] lg:p-6">
       <Panel title="Knowledge Inbox" action="Classify">
         <div className="space-y-3">
           {knowledgeItems.map((item) => (
@@ -467,9 +467,9 @@ function KnowledgeView() {
 
 function VaultView() {
   return (
-    <section className="grid gap-5 p-4 xl:grid-cols-[0.72fr_1.28fr] lg:p-6">
+    <section className="grid gap-4 p-3 sm:p-4 xl:grid-cols-[0.72fr_1.28fr] lg:p-6">
       <Panel title="Vault Status" action="Locked">
-        <div className="grid place-items-center rounded-xl border border-zion-line bg-[#070f17] p-10 text-center">
+        <div className="grid place-items-center rounded-xl border border-zion-line bg-zion-panel2 p-6 text-center sm:p-10">
           <div className="grid h-20 w-20 place-items-center rounded-full border border-zion-gold/50 bg-zion-gold/10 text-zion-gold">
             <LockKeyhole size={34} />
           </div>
@@ -504,7 +504,7 @@ function VaultView() {
 
 function SettingsView() {
   return (
-    <section className="grid gap-5 p-4 xl:grid-cols-2 lg:p-6">
+    <section className="grid gap-4 p-3 sm:p-4 xl:grid-cols-2 lg:p-6">
       <Panel title="Agents" action="14 seeded">
         <div className="grid gap-3 sm:grid-cols-2">
           {agents.map((agent) => (
@@ -576,7 +576,7 @@ function RouteTile({ label, value }: { label: string; value: string }) {
 }
 
 function Tag({ children }: { children: React.ReactNode }) {
-  return <span className="rounded-md border border-zion-line bg-[#07111a] px-2 py-1 text-xs text-zion-muted">{children}</span>;
+  return <span className="rounded-md border border-zion-line bg-white px-2 py-1 text-xs text-zion-muted">{children}</span>;
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
