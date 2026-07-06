@@ -27,6 +27,7 @@ Capture -> Route -> Protect -> Execute -> Store -> Dashboard -> Learn -> Improve
 - Finance connector: later, not Phase 1.
 - AI model strategy: default routine chat to the cheapest fast OpenAI API chat model; escalate only when task complexity, risk, context length, coding, multimodal needs, or explicit user instruction requires it.
 - Codex role: Codex is the Operator/build agent for GitHub, code, and app self-improvement workflows, not the default conversational brain.
+- Voice MVP path: start with a browser-native voice modal proof of life before OpenAI Realtime, WebRTC, streaming audio, or backend voice APIs.
 
 ## Core Layers
 
@@ -40,6 +41,7 @@ Capture -> Route -> Protect -> Execute -> Store -> Dashboard -> Learn -> Improve
 8. Global Preference Intelligence
 9. Cost-Aware AI Orchestration
 10. Operator / GitHub Self-Improvement
+11. Browser Voice Modal
 
 ## Global Preference Intelligence
 
@@ -187,6 +189,52 @@ Development request records track:
 - GitHub issue body
 - Codex prompt
 
+## Browser Voice Modal
+
+First milestone goal:
+
+```text
+Voice input -> transcript -> mock Oracle route -> spoken response
+```
+
+MVP choices:
+
+- Speech-to-text: browser `SpeechRecognition` / `webkitSpeechRecognition`.
+- Text-to-speech: browser `speechSynthesis`.
+- AI response: local mock response.
+- Routing payload: lightweight local `ZionRoutingPayload`.
+- Voice UI: modal overlay opened from the Command screen.
+- Backend: none for this milestone.
+
+Do not add OpenAI Realtime, WebRTC, streaming audio, Codex integration, Claude, Gemini, or backend APIs in this milestone.
+
+Voice user flow:
+
+1. User clicks Speak from Command.
+2. Voice modal opens.
+3. User clicks Start listening.
+4. User says "Hello Zion".
+5. Browser transcribes speech.
+6. Mock Oracle router classifies scope, container, privacy, agent, skill, confidence, and response text.
+7. Modal displays transcript and routing payload.
+8. Browser speaks the response aloud.
+9. The right-side Routing Payload panel may display the latest voice route.
+
+Voice implementation files:
+
+- `src/components/voice/VoiceModal.tsx`
+- `src/components/voice/VoiceButton.tsx`
+- `src/hooks/useSpeechRecognition.ts`
+- `src/hooks/useSpeechSynthesis.ts`
+- `src/lib/oracle/mockOracleRouter.ts`
+- `src/lib/oracle/routingTypes.ts`
+
+Next milestone after proof of life:
+
+```text
+Replace mockOracleRouter with /api/oracle/route while keeping the voice UI stable.
+```
+
 ## Scopes
 
 - Work
@@ -283,10 +331,13 @@ Agents do not override privacy.
 1. Command
    - Orb-first landing
    - Main command input
-   - Speak placeholder
+   - Speak button opens browser-native voice modal
    - Send button
    - Footer intelligence strip
    - Context bar: Scope / Container / Agent / Skill / Privacy
+   - Layout: Command / Oracle occupies the left 2/3, Speak to Zion transcript/details occupies the right 1/3.
+   - Scope Containers, Routing Payload, and Agent Context are equal bottom tiles.
+   - Main input orb uses the supplied blue/purple vortex orb artwork as the visual direction.
 
 2. Dashboard
    - Today Brief

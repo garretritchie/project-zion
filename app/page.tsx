@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -40,6 +41,9 @@ import {
   X,
   Zap
 } from "lucide-react";
+import { VoiceButton } from "@/src/components/voice/VoiceButton";
+import { VoiceModal } from "@/src/components/voice/VoiceModal";
+import type { ZionRoutingPayload } from "@/src/lib/oracle/routingTypes";
 
 type Tab = "Command" | "Dashboard" | "Knowledge" | "Operator" | "Vault" | "Settings";
 type Scope = "All" | "Work" | "Personal" | "Mixed";
@@ -501,6 +505,8 @@ export default function Home() {
   const [activeScope, setActiveScope] = useState<Scope>("All");
   const [input, setInput] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
+  const [latestVoicePayload, setLatestVoicePayload] = useState<ZionRoutingPayload | null>(null);
   const route = useMemo(() => routeInput(input), [input]);
 
   return (
@@ -563,6 +569,8 @@ export default function Home() {
             route={route}
             uploadedFiles={uploadedFiles}
             setUploadedFiles={setUploadedFiles}
+            latestVoicePayload={latestVoicePayload}
+            onOpenVoice={() => setVoiceModalOpen(true)}
           />
         )}
         {activeTab === "Dashboard" && <DashboardView />}
@@ -570,6 +578,7 @@ export default function Home() {
         {activeTab === "Operator" && <OperatorView />}
         {activeTab === "Vault" && <VaultView />}
         {activeTab === "Settings" && <SettingsView />}
+        <VoiceModal open={voiceModalOpen} onClose={() => setVoiceModalOpen(false)} onPayload={setLatestVoicePayload} />
       </div>
     </main>
   );
@@ -580,13 +589,17 @@ function CommandView({
   setInput,
   route,
   uploadedFiles,
-  setUploadedFiles
+  setUploadedFiles,
+  latestVoicePayload,
+  onOpenVoice
 }: {
   input: string;
   setInput: (value: string) => void;
   route: ReturnType<typeof routeInput>;
   uploadedFiles: UploadedFile[];
   setUploadedFiles: (files: UploadedFile[]) => void;
+  latestVoicePayload: ZionRoutingPayload | null;
+  onOpenVoice: () => void;
 }) {
   const handleFiles = (files: FileList | null) => {
     if (!files) {
@@ -609,112 +622,151 @@ function CommandView({
   };
 
   return (
-    <section className="grid min-w-0 gap-4 p-3 sm:p-4 xl:grid-cols-[0.72fr_1.22fr_0.86fr] lg:p-6">
-      <aside className="order-2 hidden content-start gap-4 sm:grid xl:order-1">
+    <section className="grid min-w-0 gap-4 p-3 sm:p-4 lg:p-6">
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[2fr_1fr]">
+        <section className="flex min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-zion-line bg-[radial-gradient(circle_at_50%_22%,rgba(11,167,160,0.12),transparent_34rem),linear-gradient(180deg,#ffffff,#f7fbfb)] p-3 shadow-command sm:min-h-[560px] sm:p-5">
+          <div className="w-full min-w-0 rounded-xl border border-zion-line bg-white p-4 shadow-command sm:p-7">
+            <div className="hidden flex-col items-start justify-between gap-4 sm:flex sm:flex-row sm:items-center">
+              <div>
+                <p className="text-sm font-semibold text-zion-cyan">Command / Oracle</p>
+                <h2 className="mt-1 text-3xl font-semibold tracking-normal">Oracle is ready</h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-zion-muted">Capture a messy thought. Zion will infer scope, container, privacy, agent, skill, confidence, and storage path.</p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-lg border border-zion-line bg-zion-panel2 px-3 py-2 text-xs font-semibold text-zion-muted">
+                <ShieldCheck size={15} className="text-zion-cyan" />
+                Privacy first
+              </span>
+            </div>
+
+            <div className="relative mx-auto grid h-44 w-44 place-items-center sm:mt-10 sm:h-80 sm:w-80">
+              <div className="zion-orb-ring absolute h-full w-full rounded-full bg-[radial-gradient(circle,rgba(11,167,160,0.16),transparent_64%)]" />
+              <div className="zion-orb-ring absolute h-[78%] w-[78%] rounded-full border border-zion-cyan/30 bg-[radial-gradient(circle,rgba(255,255,255,0.82),rgba(11,167,160,0.10)_48%,transparent_72%)] [animation-delay:0.35s]" />
+              <div className="relative grid h-36 w-36 place-items-center rounded-full sm:h-64 sm:w-64">
+                <Image
+                  src="/assets/zion-orb.png"
+                  alt="Zion command orb"
+                  width={512}
+                  height={512}
+                  priority
+                  unoptimized
+                  className="h-full w-full rounded-full object-contain drop-shadow-[0_28px_90px_rgba(59,130,246,0.34)]"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 w-full rounded-xl border border-zion-line bg-zion-panel2 p-3 sm:mt-4">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-1.5 sm:grid-cols-[1fr_auto_auto_auto] sm:gap-3">
+                <label className="sr-only" htmlFor="command-input">
+                  Command input
+                </label>
+                <input
+                  id="command-input"
+                  value={input}
+                  onChange={(event) => setInput(event.target.value)}
+                  className="order-2 min-h-12 w-full min-w-0 rounded-lg border border-zion-line bg-white px-3 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan sm:order-none sm:px-4"
+                  placeholder="Brain dump, ask, route, draft, research, plan..."
+                />
+                <label className="order-1 inline-flex h-12 w-9 cursor-pointer items-center justify-center gap-2 rounded-lg border border-zion-line bg-white px-0 text-sm font-semibold text-zion-text transition hover:border-zion-cyan/60 sm:order-none sm:w-auto sm:px-4">
+                  <Upload size={16} />
+                  <span className="hidden sm:inline">Upload</span>
+                  <input
+                    className="sr-only"
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp,application/pdf,text/*,image/*"
+                    onChange={(event) => {
+                      handleFiles(event.target.files);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                <VoiceButton onClick={onOpenVoice} />
+                <button className="hidden h-12 w-12 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm sm:grid">
+                  <Send size={16} />
+                </button>
+              </div>
+              {uploadedFiles.length > 0 && (
+                <div className="mt-3 grid gap-2">
+                  {uploadedFiles.map((file) => (
+                    <div key={file.id} className="flex items-center gap-3 rounded-lg border border-zion-line bg-white px-3 py-2 text-sm">
+                      <FileText className="shrink-0 text-zion-cyan" size={17} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-zion-text">{file.name}</p>
+                        <p className="text-xs text-zion-muted">{formatFileSize(file.size)} / queued for summarize, edit, or knowledge intake</p>
+                      </div>
+                      <button
+                        aria-label={`Remove ${file.name}`}
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-zion-line text-zion-muted hover:text-zion-text"
+                        onClick={() => removeFile(file.id)}
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
+              <RouteTile label="Scope" value={latestVoicePayload?.scope ?? route.scope} />
+              <RouteTile label="Container" value={latestVoicePayload?.container ?? route.compactContainer} />
+              <RouteTile label="Privacy" value={latestVoicePayload?.privacyLevel ?? route.privacy} />
+              <RouteTile label="Agent" value={latestVoicePayload?.agent ?? route.compactAgent} />
+              <RouteTile label="Skill" value={uploadedFiles.length ? "File Intake" : latestVoicePayload?.skill ?? route.compactSkill} />
+            </div>
+          </div>
+        </section>
+
+        <aside className="min-w-0 rounded-xl border border-zion-line bg-zion-panel p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-zion-cyan">Speak to Zion</p>
+              <h2 className="mt-1 text-xl font-semibold">Transcript & details</h2>
+              <p className="mt-2 text-sm leading-6 text-zion-muted">Use voice for the first proof-of-life route. Oracle listens, classifies locally, and Zion speaks back.</p>
+            </div>
+            <button onClick={onOpenVoice} className="inline-flex h-10 shrink-0 items-center gap-2 rounded-lg bg-zion-cyan px-3 text-sm font-semibold text-white">
+              <Mic2 size={16} />
+              Speak
+            </button>
+          </div>
+          <div className="mt-5 grid gap-3">
+            <InfoBlock label="Transcript" value={latestVoicePayload ? `You said: ${latestVoicePayload.rawInput}` : "No voice command captured yet."} />
+            <InfoBlock label="Response" value={latestVoicePayload?.responseText ?? "Click Speak and say \"Hello Zion\" to test the browser voice flow."} />
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              <RouteTile label="Scope" value={latestVoicePayload?.scope ?? "mixed"} />
+              <RouteTile label="Container" value={latestVoicePayload?.container ?? "General"} />
+              <RouteTile label="Agent" value={latestVoicePayload?.agent ?? "Oracle"} />
+              <RouteTile label="Confidence" value={latestVoicePayload ? `${Math.round(latestVoicePayload.confidence * 100)}%` : "Ready"} />
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Scope Containers" action="Seeded">
           <ContainerGroup title="Work" items={containers.Work.slice(0, 5)} />
           <ContainerGroup title="Personal" items={containers.Personal.slice(0, 5)} />
           <ContainerGroup title="Mixed / Bridge" items={containers.Mixed.slice(0, 4)} />
         </Panel>
-      </aside>
-
-      <section className="order-1 flex min-w-0 flex-col items-center justify-center overflow-hidden rounded-xl border border-zion-line bg-[radial-gradient(circle_at_50%_22%,rgba(11,167,160,0.12),transparent_34rem),linear-gradient(180deg,#ffffff,#f7fbfb)] p-3 shadow-command sm:min-h-[560px] sm:p-5 xl:order-2 xl:min-h-[650px]">
-        <div className="w-full min-w-0 max-w-[calc(100vw-2.75rem)] rounded-xl border border-zion-line bg-white p-4 shadow-command sm:max-w-3xl sm:p-7">
-          <div className="hidden flex-col items-start justify-between gap-4 sm:flex sm:flex-row sm:items-center">
-            <div>
-              <p className="text-sm font-semibold text-zion-cyan">Command</p>
-              <h2 className="mt-1 text-3xl font-semibold tracking-normal">Oracle is ready</h2>
-              <p className="mt-2 max-w-xl text-sm leading-6 text-zion-muted">Capture a messy thought. Zion will infer scope, container, privacy, agent, skill, confidence, and storage path.</p>
-            </div>
-            <span className="inline-flex items-center gap-2 rounded-lg border border-zion-line bg-zion-panel2 px-3 py-2 text-xs font-semibold text-zion-muted">
-              <ShieldCheck size={15} className="text-zion-cyan" />
-              Privacy first
-            </span>
-          </div>
-
-          <div className="relative mx-auto grid h-44 w-44 place-items-center sm:mt-10 sm:h-80 sm:w-80">
-            <div className="zion-orb-ring absolute h-full w-full rounded-full bg-[radial-gradient(circle,rgba(11,167,160,0.16),transparent_64%)]" />
-            <div className="zion-orb-ring absolute h-[78%] w-[78%] rounded-full border border-zion-cyan/30 bg-[radial-gradient(circle,rgba(255,255,255,0.82),rgba(11,167,160,0.10)_48%,transparent_72%)] [animation-delay:0.35s]" />
-            <div className="zion-orb-core relative grid h-28 w-28 place-items-center overflow-hidden rounded-full border border-white bg-[radial-gradient(circle_at_35%_28%,#ffffff_0%,#d8fff9_24%,#0ba7a0_58%,#066a68_100%)] shadow-[0_28px_90px_rgba(11,167,160,0.24)] before:absolute before:inset-[-32%] before:bg-[conic-gradient(from_90deg,transparent,#ffffff99,transparent,#b8852f66,transparent)] sm:h-44 sm:w-44">
-              <Command className="relative z-10 text-white drop-shadow" size={38} strokeWidth={1.7} />
-            </div>
-          </div>
-
-          <div className="mt-3 w-full max-w-[calc(100vw-4.5rem)] rounded-xl border border-zion-line bg-zion-panel2 p-3 sm:mt-4 sm:max-w-none">
-            <div className="grid grid-cols-[auto_minmax(0,1fr)] gap-1.5 sm:grid-cols-[1fr_auto_auto_auto] sm:gap-3">
-              <label className="sr-only" htmlFor="command-input">
-                Command input
-              </label>
-              <input
-                id="command-input"
-                value={input}
-                onChange={(event) => setInput(event.target.value)}
-                className="order-2 min-h-12 w-full min-w-0 rounded-lg border border-zion-line bg-white px-3 text-sm text-zion-text outline-none transition placeholder:text-zion-muted focus:border-zion-cyan sm:order-none sm:px-4"
-                placeholder="Brain dump, ask, route, draft, research, plan..."
-              />
-              <label className="order-1 inline-flex h-12 w-9 cursor-pointer items-center justify-center gap-2 rounded-lg border border-zion-line bg-white px-0 text-sm font-semibold text-zion-text transition hover:border-zion-cyan/60 sm:order-none sm:w-auto sm:px-4">
-                <Upload size={16} />
-                <span className="hidden sm:inline">Upload</span>
-                <input
-                  className="sr-only"
-                  type="file"
-                  multiple
-                  accept=".pdf,.doc,.docx,.txt,.md,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp,application/pdf,text/*,image/*"
-                  onChange={(event) => {
-                    handleFiles(event.target.files);
-                    event.target.value = "";
-                  }}
-                />
-              </label>
-              <button className="hidden h-12 items-center justify-center gap-2 rounded-lg border border-zion-line bg-zion-panel px-4 text-sm font-semibold text-zion-text sm:inline-flex">
-                <Mic2 size={17} />
-                Speak
-              </button>
-              <button className="hidden h-12 w-12 place-items-center rounded-lg bg-zion-cyan text-zion-bg shadow-sm sm:grid">
-                <Send size={16} />
-              </button>
-            </div>
-            {uploadedFiles.length > 0 && (
-              <div className="mt-3 grid gap-2">
-                {uploadedFiles.map((file) => (
-                  <div key={file.id} className="flex items-center gap-3 rounded-lg border border-zion-line bg-white px-3 py-2 text-sm">
-                    <FileText className="shrink-0 text-zion-cyan" size={17} />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold text-zion-text">{file.name}</p>
-                      <p className="text-xs text-zion-muted">{formatFileSize(file.size)} / queued for summarize, edit, or knowledge intake</p>
-                    </div>
-                    <button
-                      aria-label={`Remove ${file.name}`}
-                      className="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-zion-line text-zion-muted hover:text-zion-text"
-                      onClick={() => removeFile(file.id)}
-                    >
-                      <X size={15} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="mt-5 hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
-            <RouteTile label="Scope" value={route.scope} />
-            <RouteTile label="Container" value={route.compactContainer} />
-            <RouteTile label="Privacy" value={route.privacy} />
-            <RouteTile label="Agent" value={route.compactAgent} />
-            <RouteTile label="Skill" value={uploadedFiles.length ? "File Intake" : route.compactSkill} />
-          </div>
-        </div>
-      </section>
-
-      <aside className="order-3 hidden content-start gap-4 sm:grid">
         <Panel title="Routing Payload" action={route.confidence}>
           <p className="text-sm leading-6 text-zion-muted">
-            {uploadedFiles.length
+            {latestVoicePayload
+              ? latestVoicePayload.responseText
+              : uploadedFiles.length
               ? `${uploadedFiles.length} file${uploadedFiles.length === 1 ? "" : "s"} queued. Oracle should classify privacy, summarize or edit, and store the output in Knowledge.`
               : route.action}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            {route.tags.map((tag) => (
+            {(latestVoicePayload
+              ? [
+                  latestVoicePayload.scope,
+                  latestVoicePayload.container,
+                  latestVoicePayload.agent,
+                  latestVoicePayload.skill,
+                  `${Math.round(latestVoicePayload.confidence * 100)}%`
+                ]
+              : route.tags
+            ).map((tag) => (
               <Tag key={tag}>{tag}</Tag>
             ))}
           </div>
@@ -728,7 +780,7 @@ function CommandView({
             ))}
           </div>
         </Panel>
-      </aside>
+      </div>
     </section>
   );
 }
